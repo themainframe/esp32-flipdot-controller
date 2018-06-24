@@ -17,6 +17,6 @@ In addition, **GPIO 39** controls the coil drive on **Pin 12** via a _FET/BJT_.
 
 ## Progress/Plan
 
-- [ ] Working control bitbanging
+- [*] Working control bitbanging
 - [ ] Control via UDP/Wi-Fi/HTTP server (whichever is most useful)
 - [ ] Cook steamed hams
