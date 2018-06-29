@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -9,6 +8,7 @@
 #include "freertos/semphr.h"
 #include "flipdot.h"
 #include "text.h"
+#include "fill.h"
 
 static const char* TAG = "Main";
 
@@ -24,27 +24,26 @@ void app_main()
   // Initialise
   flipdot_init();
 
-  uint i = 0;
-  char text[4] = "";
+  char text[] = "Flipdot Controller Mk.2 - DAMOW.NET";
+  int x = DOT_COLUMNS;
+  
   while (1) {
 
     // Unset the whole board
-    for (uint c = 0; c < DOT_COLUMNS; c ++) {
-      for (uint r = 0; r < DOT_ROWS; r ++) {
-        dots[c][r] = i == c ? 1 : 0;
-      }
-    }
+    fill_off(&dots);
 
     // Draw some text
-    sprintf(text, "%X", i);
-    // render_text_4x5(&dots, 3, 3, text);
+    render_text_4x5(&dots, x, 4, text);
     
     // Write the dotboard repeatedly
-    ESP_LOGI(TAG, "Writing dotboard %d", i);
     write_dotboard(&dots, false);
-    
-    i ++;
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    x --;
 
+    // Start scrolling again if we reach the end
+    if (x == -(strlen(text) * 5)) {
+      x = DOT_COLUMNS;
+    }
+
+    vTaskDelay(40 / portTICK_RATE_MS);
   }
 }

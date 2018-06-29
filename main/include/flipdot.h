@@ -2,6 +2,7 @@
 #define FLIPDOT_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Dimensions
 #define DOT_ROWS 14

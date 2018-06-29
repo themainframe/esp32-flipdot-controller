@@ -2,6 +2,6 @@
 #define TEXT_H
 
 // Public subs
-void render_text_4x5(dotboard_t* dotboard, uint8_t x, uint8_t y, char* text);
+void render_text_4x5(dotboard_t* dotboard, int x, int y, char* text);
 
 #endif

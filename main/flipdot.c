@@ -58,13 +58,8 @@ void flipdot_init()
       last_written_dotboard[c][r] = 0;
     }
   }
-  
-  for (uint c = 0; c < DOT_COLUMNS; c ++) {
-    for (uint r = 0; r < DOT_ROWS; r ++) {
-      ESP_LOGI(TAG, "initVal: %d x %d = %d", c, r, last_written_dotboard[c][r]);
-    }
-  }
 
+  gpio_set_level(PIN_LED_GREEN, 1);
 }
 
 // Insert a wait
@@ -135,8 +130,6 @@ static void disable()
  */
 void write_dotboard(dotboard_t* dots, bool is_keyframe)
 {
-  gpio_set_level(PIN_LED_GREEN, 1);
-  gpio_set_level(PIN_LED_YELLOW, 1);
   gpio_set_level(PIN_LED_RED, 1);
 
   // Force an update if we don't have a dotboard buffer yet
@@ -179,12 +172,9 @@ void write_dotboard(dotboard_t* dots, bool is_keyframe)
 
   }
 
-  gpio_set_level(PIN_LED_GREEN, 0);
-  gpio_set_level(PIN_LED_YELLOW, 0);
-  gpio_set_level(PIN_LED_RED, 0);
-
   // Disable when done
   disable();
+  gpio_set_level(PIN_LED_RED, 0);
 
   // Update the buffer with the new dotboard
   for (uint c = 0; c < DOT_COLUMNS; c ++) {
