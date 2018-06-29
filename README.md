@@ -2,6 +2,8 @@
 
 **Directly controls a Hanover Displays Ltd. 7020-20-01 dotboard from an R014B-model 20x14 flipdot display.**
 
+![Image of the FDC board](https://damow.net/assets/images/2018/06/assembled-board.jpg)
+
 See the associated [blog post on damow.net](https://damow.net/fun-with-flip-dot-displays/)!
 
 ## Pinout
