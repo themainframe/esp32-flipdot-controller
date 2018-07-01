@@ -4,12 +4,10 @@
 #include "fonts/font_4x5.h"
 #include "flipdot.h"
 
-static const char* TAG = "Text";
-
 /**
  * Render a text string to the dotboard using the 4x5 font.
  */
-void render_text_4x5(dotboard_t* dotboard, int x, int y, char* text)
+void render_text_4x5(dotboard_t* dotboard, int x, int y, const char* text)
 {
   // For each char in the requested text
   for (int i = 0; i < strlen(text); i ++) {

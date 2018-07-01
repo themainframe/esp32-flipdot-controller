@@ -3,47 +3,71 @@
 #include <unistd.h>
 #include <string.h>
 #include "esp_log.h"
+#include "driver/gpio.h"
+#include "xtensa/core-macros.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/semphr.h"
 #include "flipdot.h"
-#include "text.h"
 #include "fill.h"
+#include "main.h"
+#include "scroll.h"
+#include "snake.h"
 
 static const char* TAG = "Main";
 
-static dotboard_t dots;
+static bool button_held = false;
+
+// Mode state
+static sys_mode_t mode = MODE_SCROLL;
 
 void app_main()
 {
-  ESP_LOGI(TAG, "Flipdot Display Controller System startup");
+    ESP_LOGI(TAG, "Flipdot Display Controller System startup");
 
-  // Allocate a flipdot array
-  ESP_LOGI(TAG, "Allocated %d bytes for dotboard", sizeof(*dots));
+    // Set up the button input
+    gpio_set_direction(PIN_BUTTON, GPIO_MODE_INPUT);
 
-  // Initialise
-  flipdot_init();
+    // Initialise display
+    flipdot_init();
 
-  char text[] = "Flipdot Controller Mk.2 - DAMOW.NET";
-  int x = DOT_COLUMNS;
-  
-  while (1) {
+    // Initialise snake game
+    snake_init();
 
-    // Unset the whole board
-    fill_off(&dots);
+    // A clean board to write after mode changes
+    dotboard_t clean_board;
+    fill_off(&clean_board);
 
-    // Draw some text
-    render_text_4x5(&dots, x, 4, text);
-    
-    // Write the dotboard repeatedly
-    write_dotboard(&dots, false);
-    x --;
+    // Continually update the display
+    while (1) {
 
-    // Start scrolling again if we reach the end
-    if (x == -(strlen(text) * 5)) {
-      x = DOT_COLUMNS;
+        // Detect mode changes
+        if (!gpio_get_level(PIN_BUTTON)) {
+            button_held = true;
+        } else {
+            if (button_held) {
+                // Button has now been released, enact the change
+                mode = mode == MODE_MAX - 1 ? 0 : mode + 1;
+                write_dotboard(&clean_board, false);
+                ESP_LOGI(TAG, "Changed mode to %d", mode);
+                button_held = false;
+            }
+        }
+
+        switch (mode) {
+        
+        case MODE_SCROLL:
+            scroll_update();
+            break;
+
+        case MODE_SNAKE:
+            snake_update();
+            break;
+
+        default:
+            break;
+            
+        }
+
+        vTaskDelay(50 / portTICK_RATE_MS);
     }
-
-    vTaskDelay(40 / portTICK_RATE_MS);
-  }
 }
