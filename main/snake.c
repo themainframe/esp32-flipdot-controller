@@ -25,7 +25,7 @@ static coordinate_t treat;
 /**
  * Listen for keystrokes on the UART and update the snake direction.
  */
-static void update_direction(snake_t* snake)
+static void update_direction_user(snake_t* snake)
 {
     uint8_t read_char;
     STATUS s = uart_rx_one_char(&read_char);
@@ -33,20 +33,67 @@ static void update_direction(snake_t* snake)
         // Change the direction as appropriate
         switch (read_char) {
             case 'w':
-                snake->direction = DIRECTION_UP;
-                ESP_LOGI(TAG, "Changed direction to UP");
+                if (snake->direction != DIRECTION_DOWN) {
+                    snake->direction = DIRECTION_UP;
+                    ESP_LOGI(TAG, "Changed direction to UP");
+                }
                 break;
             case 'a':
-                snake->direction = DIRECTION_LEFT;
-                ESP_LOGI(TAG, "Changed direction to LEFT");
+                if (snake->direction != DIRECTION_RIGHT) {
+                    snake->direction = DIRECTION_LEFT;
+                    ESP_LOGI(TAG, "Changed direction to LEFT");
+                }
                 break;
             case 's':
-                snake->direction = DIRECTION_DOWN;
-                ESP_LOGI(TAG, "Changed direction to DOWN");
+                if (snake->direction != DIRECTION_UP) {
+                    snake->direction = DIRECTION_DOWN;
+                    ESP_LOGI(TAG, "Changed direction to DOWN");
+                }
                 break;
             case 'd':
-                snake->direction = DIRECTION_RIGHT;
-                ESP_LOGI(TAG, "Changed direction to RIGHT");
+                if (snake->direction != DIRECTION_LEFT) {
+                    snake->direction = DIRECTION_RIGHT;
+                    ESP_LOGI(TAG, "Changed direction to RIGHT");
+                }
+                break;
+        }
+    }
+}
+
+
+/**
+ * Use a fill algorithm to decide the next best direction change.
+ */
+static void update_direction_ai(snake_t* snake)
+{
+    uint8_t read_char;
+    STATUS s = uart_rx_one_char(&read_char);
+    if (s == OK) {
+        // Change the direction as appropriate
+        switch (read_char) {
+            case 'w':
+                if (snake->direction != DIRECTION_DOWN) {
+                    snake->direction = DIRECTION_UP;
+                    ESP_LOGI(TAG, "Changed direction to UP");
+                }
+                break;
+            case 'a':
+                if (snake->direction != DIRECTION_RIGHT) {
+                    snake->direction = DIRECTION_LEFT;
+                    ESP_LOGI(TAG, "Changed direction to LEFT");
+                }
+                break;
+            case 's':
+                if (snake->direction != DIRECTION_UP) {
+                    snake->direction = DIRECTION_DOWN;
+                    ESP_LOGI(TAG, "Changed direction to DOWN");
+                }
+                break;
+            case 'd':
+                if (snake->direction != DIRECTION_LEFT) {
+                    snake->direction = DIRECTION_RIGHT;
+                    ESP_LOGI(TAG, "Changed direction to RIGHT");
+                }
                 break;
         }
     }
@@ -82,8 +129,8 @@ static void update_position(snake_t* snake)
  */
 static void place_treat()
 {
-    treat.x = rand() % DOT_COLUMNS;
-    treat.y = rand() % DOT_ROWS;
+    treat.x = 1 + (rand() % (DOT_COLUMNS - 2));
+    treat.y = 1 + (rand() % (DOT_ROWS - 2));
     ESP_LOGI(TAG, "Treat placed @ %d x %d", treat.x, treat.y);
 }
 
@@ -92,17 +139,44 @@ static void place_treat()
  */
 static void detect_collisions(snake_t* snake)
 {
-    // We're dead if we touch the walls
-    if (
-        (snake->head.x == 0 && snake->direction == DIRECTION_LEFT) ||
-        (snake->head.x == DOT_COLUMNS - 1 && snake->direction == DIRECTION_RIGHT) ||
-        (snake->head.y == 0 && snake->direction == DIRECTION_UP) ||
-        (snake->head.y == DOT_ROWS - 1 && snake->direction == DIRECTION_DOWN)
-    ) {
-        ESP_LOGI(TAG, "Wall collision detected - snake killed");
-        snake->is_dead = true;
-        return;
+    // We extend by one if we eat a treat
+    if (snake->head.x == treat.x && snake->head.y == treat.y) {
+        snake->tail_length ++;
+        place_treat();
+        ESP_LOGI(TAG, "Ate a treat, tail length extended to %d", snake->tail_length);
     }
+
+    #ifdef TOROIDAL
+
+        // Implement a toroidal map
+        if (snake->head.x == 0 && snake->direction == DIRECTION_LEFT) {
+            snake->head.x = DOT_COLUMNS - 1;
+        }
+        if (snake->head.x == DOT_COLUMNS && snake->direction == DIRECTION_RIGHT) {
+            snake->head.x = 0;
+        }
+        if (snake->head.y == 0 && snake->direction == DIRECTION_UP) {
+            snake->head.y = DOT_ROWS - 1;
+        }
+        if (snake->head.y == DOT_ROWS && snake->direction == DIRECTION_DOWN) {
+            snake->head.y = 0;
+        }
+
+    #else
+
+        // We're dead if we touch the walls
+        if (
+            (snake->head.x == 0 && snake->direction == DIRECTION_LEFT) ||
+            (snake->head.x == DOT_COLUMNS - 1 && snake->direction == DIRECTION_RIGHT) ||
+            (snake->head.y == 0 && snake->direction == DIRECTION_UP) ||
+            (snake->head.y == DOT_ROWS - 1 && snake->direction == DIRECTION_DOWN)
+        ) {
+            ESP_LOGI(TAG, "Wall collision detected - snake killed");
+            snake->is_dead = true;
+            return;
+        }
+
+    #endif
 
     // We're dead if we touch our tail
     for (int tail_i = 0; tail_i < snake->tail_length; tail_i ++) {
@@ -111,14 +185,6 @@ static void detect_collisions(snake_t* snake)
             snake->is_dead = true;
             return;
         }
-    }
-
-    // We extend by one if we eat a treat
-    if (snake->head.x == treat.x && snake->head.y == treat.y) {
-        snake->tail_length ++;
-        place_treat();
-        ESP_LOGI(TAG, "Ate a treat, tail length extended to %d", snake->tail_length);
-        return;
     }
 
 }
@@ -160,7 +226,7 @@ void snake_update()
     // Detect any collisions that occurred in the last frame
     if (!snake.is_dead) {
         // Alter direction
-        update_direction(&snake);
+        update_direction_user(&snake);
         detect_collisions(&snake);
     }
 

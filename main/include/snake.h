@@ -3,6 +3,7 @@
 #include "flipdot.h"
 
 #define MAX_TAIL_LENGTH (DOT_COLUMNS * DOT_ROWS)
+#define TOROIDAL 1
 
 // A coordinate on the grid
 typedef struct {
