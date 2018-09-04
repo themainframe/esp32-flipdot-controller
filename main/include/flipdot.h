@@ -5,8 +5,8 @@
 #include <stdbool.h>
 
 // Dimensions
-#define DOT_ROWS 14
-#define DOT_COLUMNS 20
+#define DOT_ROWS 16
+#define DOT_COLUMNS 32
 
 // GPIO Pin Definitions
 #define PIN_ENABLE 21
